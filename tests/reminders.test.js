@@ -58,4 +58,33 @@ test('background schedules, records, pauses, snoozes and restores alarms', async
   const invalid = await send({type:'save',settings:{goal:-1}});
   assert.equal(invalid.ok,false);
   assert.equal(data.settings.goal,defaults.goal);
+  let focused = true, injectable = true, shown = true;
+  const delivered = [];
+  chrome.windows = { async getLastFocused() { return { id: 1, focused }; } };
+  chrome.tabs = {
+    async query() { return [{ id: 42 }]; },
+    async sendMessage(id, message) { delivered.push({id,...message}); return {shown}; }
+  };
+  chrome.scripting = { async executeScript() { if (!injectable) throw new Error('Restricted page'); } };
+  notifications.clear();
+  await listeners.alarm({name:'stretch'});
+  assert.equal(delivered.at(-1).kind,'stretch');
+  assert.equal(notifications.size,0,'in-page delivery avoids duplicate desktop notification');
+  const countBeforeTest = data.stats.water;
+  await send({type:'test'});
+  assert.equal(delivered.at(-1).test,true);
+  assert.equal(data.stats.water,countBeforeTest,'preview does not record a drink');
+  await send({type:'snooze',kind:'stretch'});
+  assert.equal(alarms.get('snooze-stretch').delayInMinutes,5);
+  await send({type:'complete',kind:'stretch'});
+  assert.ok(!alarms.has('snooze-stretch'));
+  injectable = false;
+  await listeners.alarm({name:'stretch'});
+  assert.ok(notifications.has('stretch'),'restricted pages use desktop notification');
+  injectable = true; focused = false; notifications.clear();
+  await listeners.alarm({name:'stretch'});
+  assert.ok(notifications.has('stretch'),'unfocused browser uses desktop notification');
+  focused = true; shown = false; notifications.clear();
+  await listeners.alarm({name:'stretch'});
+  assert.ok(notifications.has('stretch'),'tab hidden during delivery uses desktop notification');
 });

@@ -17,6 +17,19 @@ async function schedule(settings, reset = []) {
   }
 }
 async function notify(kind, test = false) {
+  try {
+    const window = await chrome.windows.getLastFocused();
+    if (window.focused) {
+      const [tab] = await chrome.tabs.query({ active: true, windowId: window.id });
+      if (tab?.id) {
+        await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['reminder.js'] });
+        const response = await chrome.tabs.sendMessage(tab.id, { type: 'mam-reminder', kind, test }, { frameId: 0 });
+        if (response?.shown) return;
+      }
+    }
+  } catch (error) {
+    // Internal pages, stores and unavailable tabs fall back to desktop notifications.
+  }
   await chrome.notifications.create(test ? 'test' : kind, {
     type: 'basic', iconUrl: 'icons/icon128.png',
     title: kind === 'water' ? 'Một ngụm nước, một chút yêu thương 💧' : 'Đứng dậy cùng Mầm nhé 🌱',
@@ -61,6 +74,12 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
       data.settings.pausedUntil = message.resume ? 0 : Date.now() + 60 * 60 * 1000;
       await chrome.storage.local.set({ settings: data.settings });
     } else if (message.type === 'complete') await complete(message.kind);
+    else if (message.type === 'snooze') {
+      if (!kinds.includes(message.kind)) throw new Error('Hoạt động không hợp lệ.');
+      if (data.settings[`${message.kind}Enabled`] && data.settings.pausedUntil <= Date.now())
+        await chrome.alarms.create(`snooze-${message.kind}`, { delayInMinutes: 5 });
+      await chrome.notifications.clear(message.kind);
+    }
     else if (message.type === 'test') await notify('water', true);
     await schedule((await read()).settings);
     const current = await read();

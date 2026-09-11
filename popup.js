@@ -32,7 +32,7 @@ document.querySelectorAll('.complete').forEach(button => button.addEventListener
 for (const kind of ['water', 'stretch']) $(`${kind}Enabled`).addEventListener('change', event => act({type:'save',settings:{[`${kind}Enabled`]:event.target.checked}}));
 $('settingsForm').addEventListener('submit', async event => { event.preventDefault(); await act({type:'save',settings:{waterMinutes:Number($('waterMinutes').value),stretchMinutes:Number($('stretchMinutes').value),goal:Number($('goal').value)}}, 'Đã lưu nhịp nhắc của bạn ♡'); });
 $('pause').addEventListener('click', () => { if(state) act({type:'pause',resume:state.settings.pausedUntil > Date.now()}); });
-$('test').addEventListener('click', () => act({type:'test'}, 'Đã gửi thông báo thử. Kiểm tra thông báo của Edge nhé.'));
+$('test').addEventListener('click', () => act({type:'test'}, 'Đã gửi lời nhắc thử. Đóng popup để xem trên trang web nhé.'));
 $('today').textContent = new Date().toLocaleDateString('vi-VN',{day:'numeric',month:'numeric'});
 async function init() {
   if (isExtension) await act({type:'get'});
