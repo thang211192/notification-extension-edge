@@ -66,6 +66,14 @@ test('background schedules, records, pauses, snoozes and restores alarms', async
     async sendMessage(id, message) { delivered.push({id,...message}); return {shown}; }
   };
   chrome.scripting = { async executeScript() { if (!injectable) throw new Error('Restricted page'); } };
+  assert.equal((await send({type:'get'})).settings.inPageEnabled,false);
+  await listeners.alarm({name:'stretch'});
+  await send({type:'test'});
+  assert.equal(delivered.length,0,'default setting never delivers in-page reminders');
+  assert.ok(notifications.has('stretch'));
+  assert.ok(notifications.has('test'));
+  await send({type:'save',settings:{inPageEnabled:true}});
+  assert.equal(data.settings.inPageEnabled,true);
   notifications.clear();
   await listeners.alarm({name:'stretch'});
   assert.equal(delivered.at(-1).kind,'stretch');
@@ -87,4 +95,14 @@ test('background schedules, records, pauses, snoozes and restores alarms', async
   focused = true; shown = false; notifications.clear();
   await listeners.alarm({name:'stretch'});
   assert.ok(notifications.has('stretch'),'tab hidden during delivery uses desktop notification');
+  await send({type:'save',settings:{inPageEnabled:false}});
+  const deliveryCount = delivered.length;
+  shown = true;
+  notifications.clear();
+  await listeners.alarm({name:'stretch'});
+  await send({type:'test'});
+  assert.equal(delivered.length,deliveryCount,'turning off stops both scheduled and test in-page notifications');
+  assert.ok(notifications.has('stretch'));
+  assert.ok(notifications.has('test'));
+  assert.equal((await send({type:'get'})).settings.inPageEnabled,false,'choice persists');
 });

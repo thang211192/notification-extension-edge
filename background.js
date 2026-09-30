@@ -17,6 +17,8 @@ async function schedule(settings, reset = []) {
   }
 }
 async function notify(kind, test = false) {
+  const { settings } = await read();
+  if (settings.inPageEnabled) {
   try {
     const window = await chrome.windows.getLastFocused();
     if (window.focused) {
@@ -29,6 +31,7 @@ async function notify(kind, test = false) {
     }
   } catch (error) {
     // Internal pages, stores and unavailable tabs fall back to desktop notifications.
+  }
   }
   await chrome.notifications.create(test ? 'test' : kind, {
     type: 'basic', iconUrl: 'icons/icon128.png',

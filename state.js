@@ -1,4 +1,4 @@
-export const defaults = { waterMinutes: 30, stretchMinutes: 60, waterEnabled: true, stretchEnabled: true, goal: 8, pausedUntil: 0 };
+export const defaults = { waterMinutes: 30, stretchMinutes: 60, waterEnabled: true, stretchEnabled: true, inPageEnabled: false, goal: 8, pausedUntil: 0 };
 export function dayKey(date = new Date()) {
   return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
 }
@@ -16,6 +16,6 @@ export function validateSettings(input) {
       result[key] = n;
     }
   }
-  for (const key of ['waterEnabled', 'stretchEnabled']) if (key in input) result[key] = Boolean(input[key]);
+  for (const key of ['waterEnabled', 'stretchEnabled', 'inPageEnabled']) if (key in input) result[key] = Boolean(input[key]);
   return result;
 }

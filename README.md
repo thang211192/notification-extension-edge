@@ -32,8 +32,10 @@ Tài liệu API: https://developer.chrome.com/docs/extensions/reference/api/alar
 
 ## Thông báo ngay trên trang web (v1.1)
 
-Khi Edge đang được sử dụng, Mầm hiển thị thẻ pastel ở góc dưới bên phải trang đang xem. Có nút hoàn thành, nhắc lại sau 5 phút và đóng. Hai lời nhắc cùng lúc hiển thị thành hai thẻ riêng. Thông báo thử không cộng vào thống kê.
+Từ bản 1.2, **Nhắc ngay trên trang web** mặc định tắt, kể cả khi nâng cấp từ bản cũ. Mầm chỉ gửi thông báo hệ thống. Bạn có thể bật lại công tắc này trong popup; thay đổi được lưu ngay, không cần bấm Lưu cài đặt. Tắt công tắc cũng đóng các thẻ đang hiển thị bởi bản mới.
+
+Khi bật tùy chọn và Edge đang được sử dụng, Mầm hiển thị thẻ pastel ở góc dưới bên phải trang đang xem. Có nút hoàn thành, nhắc lại sau 5 phút và đóng. Hai lời nhắc cùng lúc hiển thị thành hai thẻ riêng. Thông báo thử không cộng vào thống kê.
 
 Trang nội bộ `edge://`, cửa hàng extension và các trang bị hạn chế sẽ dùng thông báo hệ thống. Khi cửa sổ Edge không được chọn, Mầm cũng dùng thông báo hệ thống.
 
-Sau khi cập nhật, vào `edge://extensions` và bấm **Reload / Tải lại** trên Mầm. Edge có thể yêu cầu chấp nhận quyền truy cập các trang web để hiển thị thẻ nhắc. Mở một trang HTTPS bình thường, mở Mầm → **Nhịp nhắc của bạn** → **Thử thông báo**, rồi đóng popup để thấy thẻ. Không cần tải lại các tab đang mở.
+Sau khi cập nhật, vào `edge://extensions` và bấm **Reload / Tải lại** trên Mầm. Nếu trang còn thẻ từ bản cũ, tải lại trang đó để xóa. Để thử thẻ trên trang, bật **Nhắc ngay trên trang web**, mở một trang HTTPS bình thường, mở Mầm → **Nhịp nhắc của bạn** → **Thử thông báo**, rồi đóng popup để thấy thẻ. Khi công tắc tắt, nút thử sẽ gửi thông báo hệ thống.

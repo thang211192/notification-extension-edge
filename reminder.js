@@ -3,6 +3,12 @@
   globalThis.__mamReminderInstalled = true;
   let host, root;
   const cards = new Map();
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.settings && !changes.settings.newValue?.inPageEnabled) {
+      host?.remove();
+      cards.clear();
+    }
+  });
   function mount() {
     if (host?.isConnected) return;
     cards.clear();

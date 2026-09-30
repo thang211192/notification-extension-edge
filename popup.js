@@ -12,6 +12,7 @@ function toast(message) { $('toast').textContent = message; $('toast').classList
 function render() {
   if (!state) return;
   const { settings: s, stats, alarms } = state;
+  $('inPageEnabled').checked = s.inPageEnabled;
   const paused = s.pausedUntil > Date.now();
   $('status').textContent = paused ? '☾ Đang nghỉ ngơi' : s.waterEnabled || s.stretchEnabled ? '● Đang chăm bạn' : '○ Đã tắt lời nhắc';
   $('pause').textContent = paused ? 'Tiếp tục nhắc' : 'Tạm nghỉ 1 giờ';
@@ -32,7 +33,13 @@ document.querySelectorAll('.complete').forEach(button => button.addEventListener
 for (const kind of ['water', 'stretch']) $(`${kind}Enabled`).addEventListener('change', event => act({type:'save',settings:{[`${kind}Enabled`]:event.target.checked}}));
 $('settingsForm').addEventListener('submit', async event => { event.preventDefault(); await act({type:'save',settings:{waterMinutes:Number($('waterMinutes').value),stretchMinutes:Number($('stretchMinutes').value),goal:Number($('goal').value)}}, 'Đã lưu nhịp nhắc của bạn ♡'); });
 $('pause').addEventListener('click', () => { if(state) act({type:'pause',resume:state.settings.pausedUntil > Date.now()}); });
-$('test').addEventListener('click', () => act({type:'test'}, 'Đã gửi lời nhắc thử. Đóng popup để xem trên trang web nhé.'));
+$('inPageEnabled').addEventListener('change', async event => {
+  const input = event.target;
+  input.disabled = true;
+  await act({type:'save',settings:{inPageEnabled:input.checked}}, 'Đã lưu cách hiển thị lời nhắc.');
+  input.disabled = false;
+});
+$('test').addEventListener('click', () => act({type:'test'}, state?.settings.inPageEnabled ? 'Đã gửi lời nhắc thử. Đóng popup để xem trên trang web nhé.' : 'Đã gửi thông báo thử. Kiểm tra thông báo hệ thống của Edge nhé.'));
 $('today').textContent = new Date().toLocaleDateString('vi-VN',{day:'numeric',month:'numeric'});
 async function init() {
   if (isExtension) await act({type:'get'});

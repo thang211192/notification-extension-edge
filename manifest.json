@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Mầm • Uống nước & vận động",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Một người bạn nhỏ nhắc bạn uống nước, đứng dậy và chăm sóc bản thân mỗi ngày.",
   "permissions": ["alarms", "storage", "notifications", "scripting"],
   "host_permissions": ["http://*/*", "https://*/*"],
