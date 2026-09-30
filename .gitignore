@@ -6,4 +6,4 @@ node_modules/
 !.env.example
 *.pem
 *.crx
-release/mam-edge/
+release/*.zip
