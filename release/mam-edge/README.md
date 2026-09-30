@@ -12,6 +12,10 @@ Extension Microsoft Edge nhắc uống nước và đứng dậy vận động, 
 
 Không cần npm install hoặc build.
 
+## Thông báo hệ thống (v1.2.3)
+
+Mỗi lần nhắc dùng một mã thông báo mới và xóa thông báo cũ cùng loại, để tránh tái sử dụng thông báo chưa đọc. Nút hoàn thành và nhắc lại vẫn hoạt động cho từng loại lời nhắc. Để kiểm tra, tắt **Nhắc ngay trên trang web**, bấm **Thử thông báo** hai lần, không bấm thông báo đầu tiên. Windows vẫn quyết định việc hiển thị banner dựa trên cài đặt thông báo và chế độ Không làm phiền.
+
 ## Sử dụng
 
 - Mặc định nhắc uống nước mỗi 30 phút, vận động mỗi 60 phút.

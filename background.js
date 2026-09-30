@@ -1,5 +1,13 @@
 import { defaults, normalizeStats, validateSettings } from './state.js';
 const kinds = ['water', 'stretch'];
+function notificationKind(id) {
+  if (['water', 'stretch', 'test'].includes(id)) return id;
+  return /^mam:(water|stretch|test):[0-9a-f-]+$/.exec(id)?.[1];
+}
+async function clearNotifications(kind) {
+  const existing = await chrome.notifications.getAll();
+  await Promise.all(Object.keys(existing).filter(id => notificationKind(id) === kind).map(id => chrome.notifications.clear(id)));
+}
 async function read() {
   const data = await chrome.storage.local.get(['settings', 'stats']);
   return { settings: { ...defaults, ...data.settings }, stats: normalizeStats(data.stats) };
@@ -33,7 +41,10 @@ async function notify(kind, test = false) {
     // Internal pages, stores and unavailable tabs fall back to desktop notifications.
   }
   }
-  await chrome.notifications.create(test ? 'test' : kind, {
+  const channel = test ? 'test' : kind;
+  // A fresh ID makes this a new reminder instead of replacing an unread toast.
+  await clearNotifications(channel);
+  await chrome.notifications.create(`mam:${channel}:${crypto.randomUUID()}`, {
     type: 'basic', iconUrl: 'icons/icon128.png',
     title: kind === 'water' ? 'Một ngụm nước, một chút yêu thương 💧' : 'Đứng dậy cùng Mầm nhé 🌱',
     message: kind === 'water' ? 'Tạm nghỉ một chút và uống một ly nước nhé. Mầm đợi bạn nè!' : 'Rời ghế, duỗi vai và đi lại một chút. Cơ thể sẽ cảm ơn bạn đó!',
@@ -47,7 +58,7 @@ async function complete(kind) {
   data.stats[kind]++;
   await chrome.storage.local.set({ stats: data.stats });
   await chrome.alarms.clear(`snooze-${kind}`);
-  await chrome.notifications.clear(kind);
+  await clearNotifications(kind);
   await schedule(data.settings, [kind]);
 }
 // Serialize state mutations so rapid clicks cannot overwrite each other.
@@ -62,9 +73,12 @@ chrome.alarms.onAlarm.addListener(alarm => enqueue(async () => {
   if (kinds.includes(kind) && settings[`${kind}Enabled`] && settings.pausedUntil <= Date.now()) await notify(kind);
 }));
 chrome.notifications.onButtonClicked.addListener((id, index) => enqueue(async () => {
-  if (!kinds.includes(id)) return;
-  if (index === 0) await complete(id);
-  else { await chrome.alarms.create(`snooze-${id}`, { delayInMinutes: 5 }); await chrome.notifications.clear(id); }
+  const kind = notificationKind(id);
+  if (!kinds.includes(kind) || ![0, 1].includes(index)) return;
+  const existing = await chrome.notifications.getAll();
+  if (!Object.hasOwn(existing, id)) return;
+  if (index === 0) await complete(kind);
+  else { await chrome.alarms.create(`snooze-${kind}`, { delayInMinutes: 5 }); await clearNotifications(kind); }
 }));
 chrome.runtime.onMessage.addListener((message, sender, respond) => {
   if (sender.id !== chrome.runtime.id) return;
@@ -81,7 +95,7 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
       if (!kinds.includes(message.kind)) throw new Error('Hoạt động không hợp lệ.');
       if (data.settings[`${message.kind}Enabled`] && data.settings.pausedUntil <= Date.now())
         await chrome.alarms.create(`snooze-${message.kind}`, { delayInMinutes: 5 });
-      await chrome.notifications.clear(message.kind);
+      await clearNotifications(message.kind);
     }
     else if (message.type === 'test') await notify('water', true);
     await schedule((await read()).settings);

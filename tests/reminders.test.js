@@ -17,12 +17,14 @@ test('background schedules, records, pauses, snoozes and restores alarms', async
   const event = name => ({addListener(fn) {listeners[name] = fn;}});
   const alarms = new Map();
   const notifications = new Map();
+  const latestId = kind => [...notifications.keys()].find(id => id === kind || id.startsWith(`mam:${kind}:`));
+  const hasNotification = kind => Boolean(latestId(kind));
   let data = {};
   globalThis.chrome = {
     runtime: {id:'test',onInstalled:event('install'),onStartup:event('startup'),onMessage:event('message')},
     storage:{local:{async get(){return structuredClone(data);},async set(value){data = {...data,...structuredClone(value)};}}},
     alarms:{onAlarm:event('alarm'),async create(name,options){alarms.set(name,{name,...options,scheduledTime:options.when || Date.now()+options.delayInMinutes*60000});},async clear(name){return alarms.delete(name);},async get(name){return alarms.get(name);},async getAll(){return [...alarms.values()];}},
-    notifications:{onButtonClicked:event('button'),async create(id,options){notifications.set(id,options);},async clear(id){return notifications.delete(id);}}
+    notifications:{onButtonClicked:event('button'),async getAll(){return Object.fromEntries(notifications);},async create(id,options){notifications.set(id,options);},async clear(id){return notifications.delete(id);}}
   };
   await import('../background.js');
   await listeners.install();
@@ -35,9 +37,21 @@ test('background schedules, records, pauses, snoozes and restores alarms', async
   await Promise.all(Array.from({length:5},() => send({type:'complete',kind:'water'})));
   assert.equal(data.stats.water,5);
   await listeners.alarm({name:'water'});
-  assert.equal(notifications.get('water').buttons.length,2);
-  await listeners.button('water',1);
+  assert.equal(notifications.get(latestId('water')).buttons.length,2);
+  const firstId = latestId('water');
+  await listeners.alarm({name:'water'});
+  const secondId = latestId('water');
+  assert.notEqual(firstId,secondId,'unread reminder is replaced by a fresh notification ID');
+  assert.equal(notifications.size,1,'old unread notification is cleared');
+  await listeners.button(firstId,0);
+  assert.equal(data.stats.water,5,'stale button event cannot record a completion');
+  await listeners.button(secondId,1);
   assert.ok(alarms.has('snooze-water'));
+  await listeners.alarm({name:'snooze-water'});
+  const snoozeId = latestId('water');
+  assert.notEqual(snoozeId,secondId);
+  await listeners.button(snoozeId,0);
+  assert.equal(data.stats.water,6,'fresh ID routes completion to water');
   await send({type:'complete',kind:'water'});
   assert.ok(!alarms.has('snooze-water'));
   await send({type:'pause'});
@@ -70,8 +84,8 @@ test('background schedules, records, pauses, snoozes and restores alarms', async
   await listeners.alarm({name:'stretch'});
   await send({type:'test'});
   assert.equal(delivered.length,0,'default setting never delivers in-page reminders');
-  assert.ok(notifications.has('stretch'));
-  assert.ok(notifications.has('test'));
+  assert.ok(hasNotification('stretch'));
+  assert.ok(hasNotification('test'));
   await send({type:'save',settings:{inPageEnabled:true}});
   assert.equal(data.settings.inPageEnabled,true);
   notifications.clear();
@@ -88,13 +102,13 @@ test('background schedules, records, pauses, snoozes and restores alarms', async
   assert.ok(!alarms.has('snooze-stretch'));
   injectable = false;
   await listeners.alarm({name:'stretch'});
-  assert.ok(notifications.has('stretch'),'restricted pages use desktop notification');
+  assert.ok(hasNotification('stretch'),'restricted pages use desktop notification');
   injectable = true; focused = false; notifications.clear();
   await listeners.alarm({name:'stretch'});
-  assert.ok(notifications.has('stretch'),'unfocused browser uses desktop notification');
+  assert.ok(hasNotification('stretch'),'unfocused browser uses desktop notification');
   focused = true; shown = false; notifications.clear();
   await listeners.alarm({name:'stretch'});
-  assert.ok(notifications.has('stretch'),'tab hidden during delivery uses desktop notification');
+  assert.ok(hasNotification('stretch'),'tab hidden during delivery uses desktop notification');
   await send({type:'save',settings:{inPageEnabled:false}});
   const deliveryCount = delivered.length;
   shown = true;
@@ -102,7 +116,7 @@ test('background schedules, records, pauses, snoozes and restores alarms', async
   await listeners.alarm({name:'stretch'});
   await send({type:'test'});
   assert.equal(delivered.length,deliveryCount,'turning off stops both scheduled and test in-page notifications');
-  assert.ok(notifications.has('stretch'));
-  assert.ok(notifications.has('test'));
+  assert.ok(hasNotification('stretch'));
+  assert.ok(hasNotification('test'));
   assert.equal((await send({type:'get'})).settings.inPageEnabled,false,'choice persists');
 });
