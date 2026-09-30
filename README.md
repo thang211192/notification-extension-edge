@@ -36,6 +36,8 @@ Từ bản 1.2, **Nhắc ngay trên trang web** mặc định tắt, kể cả k
 
 Khi bật tùy chọn và Edge đang được sử dụng, Mầm hiển thị thẻ pastel ở góc dưới bên phải trang đang xem. Có nút hoàn thành, nhắc lại sau 5 phút và đóng. Hai lời nhắc cùng lúc hiển thị thành hai thẻ riêng. Thông báo thử không cộng vào thống kê.
 
+Từ bản 1.2.1, thẻ tự đóng sau 10 giây, kể cả thông báo thử. Khi rê chuột, đặt tiêu điểm bàn phím vào thẻ hoặc đang lưu thao tác, thẻ sẽ được giữ lại. Sau khi rời thẻ, thời gian 10 giây bắt đầu lại. Tự đóng không ghi nhận hoàn thành và không thay đổi lịch nhắc.
+
 Trang nội bộ `edge://`, cửa hàng extension và các trang bị hạn chế sẽ dùng thông báo hệ thống. Khi cửa sổ Edge không được chọn, Mầm cũng dùng thông báo hệ thống.
 
 Sau khi cập nhật, vào `edge://extensions` và bấm **Reload / Tải lại** trên Mầm. Nếu trang còn thẻ từ bản cũ, tải lại trang đó để xóa. Để thử thẻ trên trang, bật **Nhắc ngay trên trang web**, mở một trang HTTPS bình thường, mở Mầm → **Nhịp nhắc của bạn** → **Thử thông báo**, rồi đóng popup để thấy thẻ. Khi công tắc tắt, nút thử sẽ gửi thông báo hệ thống.

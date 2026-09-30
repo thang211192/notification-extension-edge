@@ -5,13 +5,12 @@
   const cards = new Map();
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local' && changes.settings && !changes.settings.newValue?.inPageEnabled) {
-      host?.remove();
-      cards.clear();
+      for (const entry of [...cards.values()]) entry.remove();
     }
   });
   function mount() {
     if (host?.isConnected) return;
-    cards.clear();
+    for (const entry of [...cards.values()]) entry.remove();
     host = document.createElement('div');
     host.style.cssText = 'all:initial!important;position:fixed!important;right:20px!important;bottom:20px!important;z-index:2147483647!important;width:min(350px,calc(100vw - 40px))!important;display:block!important;';
     root = host.attachShadow({ mode: 'closed' });
@@ -28,14 +27,30 @@
     mount();
     const {kind, test} = message;
     const key = test ? 'test' : kind;
-    cards.get(key)?.remove();
+    cards.get(key)?.remove(false);
     const card = document.createElement('section');
     card.className = `card ${kind}`;
     card.setAttribute('role', 'region');
     card.setAttribute('aria-label', 'Lời nhắc từ Mầm');
     const close = document.createElement('button');
     close.className = 'close'; close.textContent = '×'; close.setAttribute('aria-label', 'Đóng lời nhắc');
-    const remove = () => { card.remove(); cards.delete(key); if (!cards.size) host.remove(); };
+    let timer, hovered = false, focused = false, busy = false, removed = false;
+    const remove = (removeHost = true) => {
+      if (removed) return;
+      removed = true;
+      clearTimeout(timer);
+      card.remove();
+      cards.delete(key);
+      if (removeHost && !cards.size) host.remove();
+    };
+    const restartTimer = () => {
+      clearTimeout(timer);
+      if (!removed && !hovered && !focused && !busy) timer = setTimeout(remove, 10000);
+    };
+    card.addEventListener('mouseenter', () => { hovered = true; restartTimer(); });
+    card.addEventListener('mouseleave', () => { hovered = false; restartTimer(); });
+    card.addEventListener('focusin', () => { focused = true; restartTimer(); });
+    card.addEventListener('focusout', event => { focused = card.contains(event.relatedTarget); restartTimer(); });
     close.addEventListener('click', remove);
     const body = document.createElement('div');
     body.setAttribute('role', 'status');
@@ -50,18 +65,25 @@
       const button = document.createElement('button'); button.textContent = label; if (secondary) button.className = 'secondary';
       button.addEventListener('click', async () => {
         if (test) { remove(); return; }
+        busy = true;
+        restartTimer();
         const buttons = actions.querySelectorAll('button'); buttons.forEach(b => b.disabled = true);
         try {
           const result = await chrome.runtime.sendMessage({type,kind});
           if (!result?.ok) throw new Error(result?.error);
           remove();
         } catch { error.textContent = 'Chưa lưu được. Hãy tải lại trang và thử lại nhé.'; error.hidden = false; buttons.forEach(b => b.disabled = false); }
+        finally { busy = false; restartTimer(); }
       });
       actions.append(button);
     }
     if (test) button('Dễ thương quá, đã thấy rồi ♡');
     else { button(kind === 'water' ? '✓ Đã uống 1 ly' : '✓ Đã vận động', 'complete'); button('Nhắc lại sau 5 phút', 'snooze', true); }
-    card.append(close, body, actions, error); root.append(card); cards.set(key, card);
+    const hint = document.createElement('p');
+    hint.textContent = 'Tự đóng sau 10 giây · Rê chuột để giữ lại';
+    hint.style.cssText = 'font-size:11px;margin:12px 0 0;color:#718177';
+    card.append(close, body, actions, error, hint); root.append(card); cards.set(key, { remove });
+    restartTimer();
     respond({shown:true});
   });
 })();
