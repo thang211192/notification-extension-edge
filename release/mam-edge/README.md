@@ -9,7 +9,7 @@ Extension Microsoft Edge nhắc uống nước, đứng dậy và chăm mình m�
 3. Ghim **Mầm** trên thanh công cụ. Không cần cài npm để sử dụng extension.
 4. Khi cập nhật, bấm **Tải lại** trên Mầm. Tải lại các trang đang mở để thay thế thẻ nhắc của bản cũ.
 
-Bản phát hành luôn nằm sẵn trong `release/mam-edge`, không đóng ZIP. Giữ nguyên thư mục đã tải vào Edge để giữ dữ liệu của extension.
+Bản dùng trực tiếp nằm sẵn trong `release/mam-edge`. Giữ nguyên thư mục đã tải vào Edge để giữ dữ liệu của extension. Gói nộp Edge Store riêng là `release/mam-edge-store-2.0.0.zip`; ảnh 1280×800 và hướng dẫn listing nằm trong `release/store-assets`.
 
 ## Các tính năng
 

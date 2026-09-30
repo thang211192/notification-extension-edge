@@ -7,3 +7,4 @@ node_modules/
 *.pem
 *.crx
 release/*.zip
+!release/mam-edge-store-*.zip
