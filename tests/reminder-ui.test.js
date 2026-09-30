@@ -28,7 +28,7 @@ function setup() {
   vm.runInNewContext(fs.readFileSync(new URL('../reminder.js',import.meta.url),'utf8'),context);
   return {
     document, timers, get sent(){return sent;},
-    show(kind='water',test=false) { onMessage({type:'mam-reminder',kind,test},{id:'mam'},()=>{}); return document.documentElement.children[0].shadow.children.at(-1); },
+    show(kind='water',test=false,appearance={}) { onMessage({type:'mam-reminder',kind,test,appearance},{id:'mam'},()=>{}); return document.documentElement.children[0].shadow.children.at(-1); },
     tick(ms) { now+=ms; for(const [id,timer] of [...timers]) if(timer.when<=now) {timers.delete(id);timer.fn();} },
     disable() { onChanged({settings:{newValue:{inPageEnabled:false}}},'local'); }
   };
@@ -56,4 +56,15 @@ test('replacement and simultaneous reminders have independent timers; disabling 
   app.tick(5000); assert.equal(app.document.documentElement.children.length,0);
   app.show(); app.show('stretch'); app.disable();
   assert.equal(app.timers.size,0); assert.equal(app.document.documentElement.children.length,0);
+});
+test('personalized dismiss time and manual close mode are respected',()=>{
+  const app=setup(); const card=app.show('water',false,{dismissSeconds:20,theme:'rose'});
+  assert.ok(card.style.cssText.includes('#fcf1f5'));
+  app.tick(10000); assert.ok(card.isConnected);
+  app.tick(10000); assert.ok(!card.isConnected);
+  const manual=app.show('water',false,{dismissSeconds:0});
+  app.tick(60000); assert.ok(manual.isConnected);
+  assert.equal(app.timers.size,0);
+  manual.children[0].events.click();
+  assert.ok(!manual.isConnected);
 });

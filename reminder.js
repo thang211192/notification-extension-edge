@@ -4,7 +4,7 @@
   let host, root;
   const cards = new Map();
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && changes.settings && !changes.settings.newValue?.inPageEnabled) {
+    if (area === 'local' && changes.settings && (!changes.settings.newValue?.inPageEnabled || changes.settings.newValue?.pausedUntil > Date.now())) {
       for (const entry of [...cards.values()]) entry.remove();
     }
   });
@@ -26,10 +26,14 @@
     if (document.visibilityState !== 'visible' || !['water','stretch'].includes(message.kind)) { respond({shown:false}); return; }
     mount();
     const {kind, test} = message;
+    const appearance = message.appearance ?? {};
+    const dismissSeconds = [0,5,10,20,30].includes(appearance.dismissSeconds) ? appearance.dismissSeconds : 10;
     const key = test ? 'test' : kind;
     cards.get(key)?.remove(false);
     const card = document.createElement('section');
     card.className = `card ${kind}`;
+    const palette = {sage:['#f5faf6','#7d956c'],rose:['#fcf1f5','#ae7289'],sky:['#eff8fb','#598fa5']}[appearance.theme ?? 'sage'];
+    if (palette) card.style.cssText = `background:${palette[0]};`;
     card.setAttribute('role', 'region');
     card.setAttribute('aria-label', 'Lời nhắc từ Mầm');
     const close = document.createElement('button');
@@ -45,7 +49,7 @@
     };
     const restartTimer = () => {
       clearTimeout(timer);
-      if (!removed && !hovered && !focused && !busy) timer = setTimeout(remove, 10000);
+      if (dismissSeconds && !removed && !hovered && !focused && !busy) timer = setTimeout(remove, dismissSeconds * 1000);
     };
     card.addEventListener('mouseenter', () => { hovered = true; restartTimer(); });
     card.addEventListener('mouseleave', () => { hovered = false; restartTimer(); });
@@ -63,13 +67,14 @@
     const error = document.createElement('p'); error.className = 'error'; error.setAttribute('role', 'alert'); error.hidden = true;
     function button(label, type, secondary = false) {
       const button = document.createElement('button'); button.textContent = label; if (secondary) button.className = 'secondary';
+      if (!secondary && palette) button.style.cssText = `background:${palette[1]}`;
       button.addEventListener('click', async () => {
         if (test) { remove(); return; }
         busy = true;
         restartTimer();
         const buttons = actions.querySelectorAll('button'); buttons.forEach(b => b.disabled = true);
         try {
-          const result = await chrome.runtime.sendMessage({type,kind});
+          const result = await chrome.runtime.sendMessage({type,kind,...(type === 'complete' && kind === 'water' && appearance.cupMl ? {amountMl:appearance.cupMl} : {})});
           if (!result?.ok) throw new Error(result?.error);
           remove();
         } catch { error.textContent = 'Chưa lưu được. Hãy tải lại trang và thử lại nhé.'; error.hidden = false; buttons.forEach(b => b.disabled = false); }
@@ -78,9 +83,9 @@
       actions.append(button);
     }
     if (test) button('Dễ thương quá, đã thấy rồi ♡');
-    else { button(kind === 'water' ? '✓ Đã uống 1 ly' : '✓ Đã vận động', 'complete'); button('Nhắc lại sau 5 phút', 'snooze', true); }
+    else { button(kind === 'water' ? `✓ Đã uống ${appearance.cupMl ?? 250} ml` : '✓ Đã vận động', 'complete'); button('Nhắc lại sau 5 phút', 'snooze', true); }
     const hint = document.createElement('p');
-    hint.textContent = 'Tự đóng sau 10 giây · Rê chuột để giữ lại';
+    hint.textContent = dismissSeconds ? `Tự đóng sau ${dismissSeconds} giây · Rê chuột để giữ lại` : 'Giữ đến khi bạn đóng · Nhẹ nhàng thôi nhé';
     hint.style.cssText = 'font-size:11px;margin:12px 0 0;color:#718177';
     card.append(close, body, actions, error, hint); root.append(card); cards.set(key, { remove });
     restartTimer();

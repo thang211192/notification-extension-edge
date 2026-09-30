@@ -12,7 +12,8 @@ test('settings reject invalid values and ignore unrelated fields', () => {
   assert.throws(() => validateSettings({waterMinutes:0}));
   assert.deepEqual(validateSettings({goal:10,pausedUntil:123}),{goal:10});
 });
-test('background schedules, records, pauses, snoozes and restores alarms', async () => {
+test('background schedules, records, pauses, snoozes and restores alarms', async t => {
+  t.mock.timers.enable({apis:['Date'],now:new Date(2026,8,28,9,0).getTime()});
   const listeners = {};
   const event = name => ({addListener(fn) {listeners[name] = fn;}});
   const alarms = new Map();
@@ -28,8 +29,8 @@ test('background schedules, records, pauses, snoozes and restores alarms', async
   };
   await import('../background.js');
   await listeners.install();
-  assert.equal(alarms.get('water').periodInMinutes,30);
-  assert.equal(alarms.get('stretch').periodInMinutes,60);
+  assert.equal(alarms.get('water').scheduledTime,Date.now()+30*60000);
+  assert.equal(alarms.get('stretch').scheduledTime,Date.now()+60*60000);
   const send = message => new Promise(resolve => listeners.message(message,{id:'test'},resolve));
   const initialTime = alarms.get('water').scheduledTime;
   await send({type:'get'});
@@ -64,7 +65,7 @@ test('background schedules, records, pauses, snoozes and restores alarms', async
   assert.ok(alarms.has('water'));
   await send({type:'save',settings:{waterEnabled:false,stretchMinutes:15}});
   assert.ok(!alarms.has('water'));
-  assert.equal(alarms.get('stretch').periodInMinutes,15);
+  assert.equal(alarms.get('stretch').scheduledTime,Date.now()+15*60000);
   alarms.clear();
   await listeners.startup();
   assert.ok(alarms.has('stretch'));
@@ -97,7 +98,7 @@ test('background schedules, records, pauses, snoozes and restores alarms', async
   assert.equal(delivered.at(-1).test,true);
   assert.equal(data.stats.water,countBeforeTest,'preview does not record a drink');
   await send({type:'snooze',kind:'stretch'});
-  assert.equal(alarms.get('snooze-stretch').delayInMinutes,5);
+  assert.equal(alarms.get('snooze-stretch').scheduledTime,Date.now()+5*60000);
   await send({type:'complete',kind:'stretch'});
   assert.ok(!alarms.has('snooze-stretch'));
   injectable = false;
@@ -119,4 +120,55 @@ test('background schedules, records, pauses, snoozes and restores alarms', async
   assert.ok(hasNotification('stretch'));
   assert.ok(hasNotification('test'));
   assert.equal((await send({type:'get'})).settings.inPageEnabled,false,'choice persists');
+  // Quantities are immutable after logging, even if the user's cup changes.
+  await send({type:'save',settings:{cupMl:350}});
+  const beforeMl=data.stats.waterMl;
+  await send({type:'complete',kind:'water'});
+  assert.equal(data.stats.waterMl,beforeMl+350);
+  const undoId=data.lastAction.id;
+  await send({type:'save',settings:{cupMl:500}});
+  assert.equal(data.stats.waterMl,beforeMl+350);
+  await send({type:'undo',id:undoId});
+  assert.equal(data.stats.waterMl,beforeMl);
+  assert.equal((await send({type:'undo',id:undoId})).ok,false);
+  await send({type:'save',settings:{waterEnabled:true,sound:false}});
+  await listeners.alarm({name:'water'});
+  const waterId=latestId('water');
+  assert.equal(notifications.get(waterId).silent,true);
+  assert.equal(notifications.get(waterId).buttons[0].title,'Đã uống 500 ml');
+  await send({type:'save',settings:{cupMl:250}});
+  await listeners.button(waterId,0);
+  assert.equal(data.stats.waterMl,beforeMl+500,'notification preserves the amount shown on its button');
+  await send({type:'save',settings:{scheduleEnabled:true}});
+  t.mock.timers.setTime(new Date(2026,8,28,12,15).getTime());
+  notifications.clear();
+  await listeners.alarm({name:'water'});
+  assert.equal(notifications.size,0,'no reminders during lunch');
+  assert.equal(alarms.get('water').scheduledTime,new Date(2026,8,28,13,0).getTime());
+  await send({type:'snooze',kind:'water'});
+  assert.equal(alarms.get('snooze-water').scheduledTime,new Date(2026,8,28,13,0).getTime());
+  await send({type:'pause',minutes:25});
+  const focusEnd=Date.now()+25*60000;
+  assert.equal(alarms.get('resume').scheduledTime,focusEnd);
+  assert.ok(!alarms.has('snooze-water'));
+  assert.ok(!alarms.has('water'));
+  await listeners.startup();
+  assert.ok(!alarms.has('water'),'focus survives browser restart');
+  t.mock.timers.setTime(focusEnd);
+  await listeners.alarm({name:'resume'});
+  assert.ok(alarms.has('water'),'automatically resumes after focus');
+  const oldDay=data.stats.day, oldWater=data.stats.waterMl, lastId=data.lastAction.id;
+  t.mock.timers.setTime(new Date(2026,8,29,9,0).getTime());
+  const nextDay=await send({type:'get'});
+  assert.equal(nextDay.stats.waterMl,0);
+  assert.equal(nextDay.history[oldDay].waterMl,oldWater,'archives totals across midnight');
+  await send({type:'undo',id:lastId});
+  assert.equal(data.history[oldDay].waterMl,oldWater-500,'undo adjusts the original day');
+  assert.equal(data.stats.waterMl,0);
+  // A late alarm after sleep must not notify outside the selected weekdays.
+  t.mock.timers.setTime(new Date(2026,9,3,10,0).getTime());
+  notifications.clear();
+  await listeners.alarm({name:'stretch'});
+  assert.equal(notifications.size,0);
+  assert.equal(new Date(alarms.get('stretch').scheduledTime).getDay(),1);
 });
