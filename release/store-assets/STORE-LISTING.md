@@ -1,8 +1,8 @@
-# Bộ nộp Microsoft Edge Add-ons · Mầm 2.0.0
+# Bộ nộp Microsoft Edge Add-ons · Mầm 2.1.0
 
 ## Các tệp để upload
 
-- **Package:** `../mam-edge-store-2.0.0.zip`. Upload nguyên ZIP, không phải thư mục mã nguồn. ZIP có 11 tệp chạy extension, `manifest.json` ở gốc; không chứa node_modules, kiểm thử, dữ liệu minh họa, ảnh listing, khóa ký hoặc tệp cấu hình cá nhân.
+- **Package:** `../mam-edge-store-2.1.0.zip`. Upload nguyên ZIP, không phải thư mục mã nguồn. ZIP có 14 tệp chạy extension, bao gồm `_locales/en` và `_locales/vi`, `manifest.json` ở gốc; không chứa node_modules, kiểm thử, dữ liệu minh họa, ảnh listing, khóa ký hoặc tệp cấu hình cá nhân.
 - **Ảnh listing:** `01-mam-overview-1280x800.png`, `02-mam-week-focus-1280x800.png`, `03-mam-schedule-1280x800.png`. PNG đúng 1280×800, chụp giao diện thật với dữ liệu minh họa.
 - **Logo:** `store-icon-128.png`, PNG 128×128 nền trong suốt.
 
@@ -25,7 +25,7 @@ Chăm mình một chút, mỗi ngày. Mầm là người bạn nhỏ trên Micro
 - Cá nhân hóa màu giao diện, chậu cây, âm thanh hệ thống và thời gian tự đóng thẻ trên trang.
 - Dùng thông báo hệ thống hoặc bật thẻ nhắc ngay trên trang đang xem.
 
-Giao diện tiếng Việt. Không cần tài khoản. Cài đặt và lịch sử được lưu trên thiết bị, không gửi tới máy chủ.
+Giao diện Tiếng Việt và English, đổi ngay trong popup. Không cần tài khoản. Cài đặt và lịch sử được lưu trên thiết bị, không gửi tới máy chủ.
 
 Edge cần đang chạy để gửi lời nhắc; máy ngủ có thể làm trễ thông báo. Thẻ trên trang không hoạt động trên trang nội bộ hoặc trang bị Edge hạn chế và sẽ chuyển sang thông báo hệ thống. Banner và âm thanh hệ thống phụ thuộc cài đặt Windows. Mục tiêu nước do bạn tự chọn.
 

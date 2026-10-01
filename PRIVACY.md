@@ -1,6 +1,6 @@
 # Chính sách quyền riêng tư của Mầm
 
-Cập nhật: 30/09/2026 · Áp dụng cho extension Mầm trên Microsoft Edge, phiên bản 2.0.0.
+Cập nhật: 01/10/2026 · Áp dụng cho extension Mầm trên Microsoft Edge, phiên bản 2.1.0.
 
 Mầm hỗ trợ nhắc uống nước, vận động và theo dõi thói quen cá nhân. Extension không yêu cầu tài khoản.
 

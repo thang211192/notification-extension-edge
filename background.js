@@ -1,4 +1,5 @@
 import { migrateData, validateSettings, inSchedule, nextAllowed } from './state.js';
+import {tr, translateError, reminderCopy} from './i18n.js';
 const kinds = ['water', 'stretch'];
 function notificationKind(id) {
   if (['water', 'stretch', 'test'].includes(id)) return id;
@@ -11,6 +12,7 @@ async function clearNotifications(kind) {
 async function read() {
   const raw = await chrome.storage.local.get(['settings','stats','history','lastAction','schemaVersion']);
   const data = migrateData(raw);
+  if (!raw.settings) data.settings.language = chrome.i18n?.getUILanguage().startsWith('vi') === false ? 'en' : 'vi';
   if (raw.schemaVersion !== 2 || raw.stats?.day !== data.stats.day) await chrome.storage.local.set(data);
   return data;
 }
@@ -32,6 +34,7 @@ async function schedule(settings, reset = []) {
 }
 async function notify(kind, test = false) {
   const { settings } = await read();
+  const t = (text,values) => tr(settings.language,text,values);
   if (settings.inPageEnabled) {
   try {
     const window = await chrome.windows.getLastFocused();
@@ -39,7 +42,7 @@ async function notify(kind, test = false) {
       const [tab] = await chrome.tabs.query({ active: true, windowId: window.id });
       if (tab?.id) {
         await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['reminder.js'] });
-        const response = await chrome.tabs.sendMessage(tab.id, { type: 'mam-reminder', kind, test, appearance: { theme:settings.theme, pot:settings.pot, dismissSeconds:settings.dismissSeconds, cupMl:settings.cupMl } }, { frameId: 0 });
+        const response = await chrome.tabs.sendMessage(tab.id, { type: 'mam-reminder', kind, test, language:settings.language, copy:reminderCopy(settings.language,settings.cupMl,settings.dismissSeconds,test,kind), appearance: { theme:settings.theme, pot:settings.pot, dismissSeconds:settings.dismissSeconds, cupMl:settings.cupMl } }, { frameId: 0 });
         if (response?.shown) return;
       }
     }
@@ -52,9 +55,9 @@ async function notify(kind, test = false) {
   await clearNotifications(channel);
   await chrome.notifications.create(`mam:${channel}:${settings.cupMl}:${crypto.randomUUID()}`, {
     type: 'basic', iconUrl: 'icons/icon128.png',
-    title: kind === 'water' ? 'Một ngụm nước, một chút yêu thương 💧' : 'Đứng dậy cùng Mầm nhé 🌱',
-    message: kind === 'water' ? 'Tạm nghỉ một chút và uống một ly nước nhé. Mầm đợi bạn nè!' : 'Rời ghế, duỗi vai và đi lại một chút. Cơ thể sẽ cảm ơn bạn đó!',
-    buttons: test ? [] : [{ title: kind === 'water' ? `Đã uống ${settings.cupMl} ml` : 'Đã vận động' }, { title: 'Nhắc lại sau 5 phút' }],
+    title: t(kind === 'water' ? 'Một ngụm nước, một chút yêu thương 💧' : 'Đứng dậy cùng Mầm nhé 🌱'),
+    message: t(kind === 'water' ? 'Tạm nghỉ một chút và uống một ly nước nhé. Mầm đợi bạn nè!' : 'Rời ghế, duỗi vai và đi lại một chút. Cơ thể sẽ cảm ơn bạn đó!'),
+    buttons: test ? [] : [{ title: t(kind === 'water' ? 'Đã uống {amount} ml' : 'Đã vận động',{amount:settings.cupMl}) }, { title: t('Nhắc lại sau 5 phút') }],
     priority: 1, silent: !settings.sound
   });
 }
@@ -144,6 +147,9 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
     await schedule((await read()).settings);
     const current = await read();
     return { ...current, alarms: await chrome.alarms.getAll() };
-  }, false).then(data => respond({ ok: true, ...data }), error => respond({ ok: false, error: error.message }));
+  }, false).then(data => respond({ ok: true, ...data }), async error => {
+    const data = await chrome.storage.local.get(['settings']).catch(() => ({}));
+    respond({ ok: false, error: translateError(data.settings?.language ?? 'vi',error.message) });
+  });
   return true;
 });

@@ -26,6 +26,7 @@
     if (document.visibilityState !== 'visible' || !['water','stretch'].includes(message.kind)) { respond({shown:false}); return; }
     mount();
     const {kind, test} = message;
+    const copy = message.copy ?? {};
     const appearance = message.appearance ?? {};
     const dismissSeconds = [0,5,10,20,30].includes(appearance.dismissSeconds) ? appearance.dismissSeconds : 10;
     const key = test ? 'test' : kind;
@@ -35,9 +36,10 @@
     const palette = {sage:['#f5faf6','#7d956c'],rose:['#fcf1f5','#ae7289'],sky:['#eff8fb','#598fa5']}[appearance.theme ?? 'sage'];
     if (palette) card.style.cssText = `background:${palette[0]};`;
     card.setAttribute('role', 'region');
-    card.setAttribute('aria-label', 'Lời nhắc từ Mầm');
+    card.setAttribute('lang',message.language === 'en' ? 'en' : 'vi');
+    card.setAttribute('aria-label', copy.region ?? 'Lời nhắc từ Mầm');
     const close = document.createElement('button');
-    close.className = 'close'; close.textContent = '×'; close.setAttribute('aria-label', 'Đóng lời nhắc');
+    close.className = 'close'; close.textContent = '×'; close.setAttribute('aria-label', copy.close ?? 'Đóng lời nhắc');
     let timer, hovered = false, focused = false, busy = false, removed = false;
     const remove = (removeHost = true) => {
       if (removed) return;
@@ -58,10 +60,10 @@
     close.addEventListener('click', remove);
     const body = document.createElement('div');
     body.setAttribute('role', 'status');
-    const brand = document.createElement('div'); brand.className = 'brand'; brand.textContent = test ? 'MẦM 🌱 · THÔNG BÁO THỬ' : 'MẦM 🌱 · CHĂM MÌNH MỘT CHÚT';
+    const brand = document.createElement('div'); brand.className = 'brand'; brand.textContent = copy.brand ?? (test ? 'MẦM 🌱 · THÔNG BÁO THỬ' : 'MẦM 🌱 · CHĂM MÌNH MỘT CHÚT');
     const emoji = document.createElement('div'); emoji.className = 'emoji'; emoji.textContent = kind === 'water' ? '💧' : '🌼';
-    const title = document.createElement('h2'); title.textContent = kind === 'water' ? 'Uống nước cùng Mầm nhé!' : 'Đứng dậy vươn vai nào!';
-    const description = document.createElement('p'); description.textContent = kind === 'water' ? 'Một ngụm mát lành, thêm một chút tươi tắn. Công việc đợi bạn một chút nhé.' : 'Rời ghế, duỗi vai và đi lại một chút. Cơ thể sẽ cảm ơn bạn đó!';
+    const title = document.createElement('h2'); title.textContent = copy.title ?? (kind === 'water' ? 'Uống nước cùng Mầm nhé!' : 'Đứng dậy vươn vai nào!');
+    const description = document.createElement('p'); description.textContent = copy.description ?? (kind === 'water' ? 'Một ngụm mát lành, thêm một chút tươi tắn. Công việc đợi bạn một chút nhé.' : 'Rời ghế, duỗi vai và đi lại một chút. Cơ thể sẽ cảm ơn bạn đó!');
     body.append(brand, emoji, title, description);
     const actions = document.createElement('div'); actions.className = 'actions';
     const error = document.createElement('p'); error.className = 'error'; error.setAttribute('role', 'alert'); error.hidden = true;
@@ -77,15 +79,15 @@
           const result = await chrome.runtime.sendMessage({type,kind,...(type === 'complete' && kind === 'water' && appearance.cupMl ? {amountMl:appearance.cupMl} : {})});
           if (!result?.ok) throw new Error(result?.error);
           remove();
-        } catch { error.textContent = 'Chưa lưu được. Hãy tải lại trang và thử lại nhé.'; error.hidden = false; buttons.forEach(b => b.disabled = false); }
+        } catch { error.textContent = copy.error ?? 'Chưa lưu được. Hãy tải lại trang và thử lại nhé.'; error.hidden = false; buttons.forEach(b => b.disabled = false); }
         finally { busy = false; restartTimer(); }
       });
       actions.append(button);
     }
-    if (test) button('Dễ thương quá, đã thấy rồi ♡');
-    else { button(kind === 'water' ? `✓ Đã uống ${appearance.cupMl ?? 250} ml` : '✓ Đã vận động', 'complete'); button('Nhắc lại sau 5 phút', 'snooze', true); }
+    if (test) button(copy.gotIt ?? 'Dễ thương quá, đã thấy rồi ♡');
+    else { button(copy.complete ?? (kind === 'water' ? `✓ Đã uống ${appearance.cupMl ?? 250} ml` : '✓ Đã vận động'), 'complete'); button(copy.snooze ?? 'Nhắc lại sau 5 phút', 'snooze', true); }
     const hint = document.createElement('p');
-    hint.textContent = dismissSeconds ? `Tự đóng sau ${dismissSeconds} giây · Rê chuột để giữ lại` : 'Giữ đến khi bạn đóng · Nhẹ nhàng thôi nhé';
+    hint.textContent = copy.hint ?? (dismissSeconds ? `Tự đóng sau ${dismissSeconds} giây · Rê chuột để giữ lại` : 'Giữ đến khi bạn đóng · Nhẹ nhàng thôi nhé');
     hint.style.cssText = 'font-size:11px;margin:12px 0 0;color:#718177';
     card.append(close, body, actions, error, hint); root.append(card); cards.set(key, { remove });
     restartTimer();

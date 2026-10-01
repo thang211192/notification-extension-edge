@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $manifest = Get-Content -LiteralPath (Join-Path $projectRoot 'manifest.json') -Raw -Encoding utf8 | ConvertFrom-Json
 $zipPath = Join-Path $projectRoot "release\mam-edge-store-$($manifest.version).zip"
-$files = @('manifest.json','background.js','state.js','popup.html','popup.css','popup.js','reminder.js','icons/icon16.png','icons/icon32.png','icons/icon48.png','icons/icon128.png')
+$files = @('manifest.json','background.js','state.js','i18n.js','popup.html','popup.css','popup.js','reminder.js','icons/icon16.png','icons/icon32.png','icons/icon48.png','icons/icon128.png','_locales/en/messages.json','_locales/vi/messages.json')
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $stream = [System.IO.File]::Open($zipPath,[System.IO.FileMode]::Create)

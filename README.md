@@ -1,6 +1,6 @@
-# Mầm 🌱 · 2.0
+# Mầm 🌱 · 2.1
 
-Extension Microsoft Edge nhắc uống nước, đứng dậy và chăm mình mỗi ngày. Giao diện tiếng Việt, icon nền trong suốt, dữ liệu lưu trên thiết bị.
+Extension Microsoft Edge nhắc uống nước, đứng dậy và chăm mình mỗi ngày. Giao diện Tiếng Việt / English, icon nền trong suốt, dữ liệu lưu trên thiết bị.
 
 ## Cài đặt / cập nhật
 
@@ -9,7 +9,11 @@ Extension Microsoft Edge nhắc uống nước, đứng dậy và chăm mình m�
 3. Ghim **Mầm** trên thanh công cụ. Không cần cài npm để sử dụng extension.
 4. Khi cập nhật, bấm **Tải lại** trên Mầm. Tải lại các trang đang mở để thay thế thẻ nhắc của bản cũ.
 
-Bản dùng trực tiếp nằm sẵn trong `release/mam-edge`. Giữ nguyên thư mục đã tải vào Edge để giữ dữ liệu của extension. Gói nộp Edge Store riêng là `release/mam-edge-store-2.0.0.zip`; ảnh 1280×800 và hướng dẫn listing nằm trong `release/store-assets`.
+Bản dùng trực tiếp nằm sẵn trong `release/mam-edge`. Giữ nguyên thư mục đã tải vào Edge để giữ dữ liệu của extension. Gói nộp Edge Store mới là `release/mam-edge-store-2.1.0.zip`; ảnh 1280×800 và hướng dẫn listing nằm trong `release/store-assets`.
+
+## Ngôn ngữ / Language
+
+Chọn **Tiếng Việt** hoặc **English** ở dòng **Ngôn ngữ / Language** ngay dưới logo trong popup. Tự lưu và áp dụng ngay cho giao diện, định dạng số/ngày, thông báo hệ thống và thẻ nhắc mới. Lịch sử và cài đặt nhắc được giữ nguyên. Bản nâng cấp giữ Tiếng Việt cho người dùng cũ; cài mới dùng Tiếng Việt nếu Edge đang dùng tiếng Việt, còn lại dùng English. Tên và mô tả trên trang quản lý extension theo ngôn ngữ Edge qua `_locales/vi` và `_locales/en`.
 
 ## Các tính năng
 

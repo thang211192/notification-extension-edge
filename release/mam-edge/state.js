@@ -3,7 +3,7 @@ export const defaults = {
   inPageEnabled: false, goal: 8, cupMl: 250, goalMl: 2000, pausedUntil: 0,
   scheduleEnabled: false, days: [1,2,3,4,5], startTime: '08:00', endTime: '17:30',
   lunchEnabled: true, lunchStart: '12:00', lunchEnd: '13:00',
-  theme: 'sage', pot: 'clay', sound: true, dismissSeconds: 10
+  theme: 'sage', pot: 'clay', sound: true, dismissSeconds: 10, language: 'vi'
 };
 export function dayKey(date = new Date()) {
   return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
@@ -36,7 +36,7 @@ export function validateSettings(input, current = defaults) {
     if (typeof input[key] !== 'boolean') throw new Error('Tùy chọn bật/tắt không hợp lệ.');
     result[key] = input[key];
   }
-  for (const [key,choices] of Object.entries({theme:['sage','rose','sky'],pot:['clay','lavender','cream'],dismissSeconds:[0,5,10,20,30]})) if (key in input) {
+  for (const [key,choices] of Object.entries({language:['vi','en'],theme:['sage','rose','sky'],pot:['clay','lavender','cream'],dismissSeconds:[0,5,10,20,30]})) if (key in input) {
     if (!choices.includes(input[key])) throw new Error('Tùy chọn cá nhân hóa không hợp lệ.');
     result[key] = input[key];
   }
@@ -71,10 +71,10 @@ export function nextAllowed(settings, timestamp) {
   }
   throw new Error('Không tìm thấy giờ nhắc hợp lệ.');
 }
-export function weekData(history, date = new Date()) {
+export function weekData(history, date = new Date(), language = 'vi') {
   return Array.from({length:7}, (_,i) => {
     const d = new Date(date); d.setDate(d.getDate()-6+i); const key = dayKey(d);
-    return {day:key,label:d.toLocaleDateString('vi-VN',{day:'numeric',month:'numeric'}),weekday:d.getDay(),known:Boolean(history[key]),...(history[key] ?? {water:0,waterMl:0,stretch:0,goalMl:0})};
+    return {day:key,label:d.toLocaleDateString(language === 'en' ? 'en-US' : 'vi-VN',{day:'numeric',month:'numeric'}),weekday:d.getDay(),known:Boolean(history[key]),...(history[key] ?? {water:0,waterMl:0,stretch:0,goalMl:0})};
   });
 }
 export function plantState(history, stats) {
